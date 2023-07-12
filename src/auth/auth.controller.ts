@@ -44,7 +44,6 @@ export class AuthController {
       throw new UnauthorizedException('User not authenticated');
     }
     const { fullName, email } = req.user;
-    // Do something with the fullName and email (e.g., save to database, return as a response)
     return { fullName, email };
   }
 }
