@@ -4,21 +4,18 @@ import {
   Post,
   Body,
   Get,
+  UseGuards,
   Res,
   Req,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
-import { ConfigService } from '@nestjs/config';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private authService: AuthService,
-    private configService: ConfigService,
-  ) {}
+  constructor(private authService: AuthService) {}
 
   @Post('/register')
   registerUser(@Body() registerUserDto: RegisterUserDto) {
@@ -30,20 +27,23 @@ export class AuthController {
     return this.authService.loginUser(loginUserDto);
   }
 
-  @Get('/google')
-  googleLogin(@Res() res) {
-    const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
-    const callbackUrl = this.configService.get<string>('GOOGLE_CALLBACK_URL');
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${callbackUrl}&response_type=code&scope=profile%20email`;
-    res.redirect(googleAuthUrl);
+  @Get('/google/login')
+  @UseGuards(AuthGuard('google'))
+  googleLogin() {}
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  googleCallback(@Req() req, @Res() res) {
+    res.json(req.user);
   }
 
-  @Get('/google/callback')
-  async googleLoginRedirect(@Req() req) {
-    if (!req.user) {
-      throw new UnauthorizedException('User not authenticated');
-    }
-    const { fullName, email } = req.user;
-    return { fullName, email };
+  @Get('/facebook/login')
+  @UseGuards(AuthGuard('facebook'))
+  faceBookLogin() {}
+
+  @Get('facebook/callback')
+  @UseGuards(AuthGuard('facebook'))
+  facebookCallback(@Req() req, @Res() res) {
+    res.json(req.user);
   }
 }
